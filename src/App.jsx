@@ -3,165 +3,94 @@ import "./App.css";
 
 function App() {
   const [notes, setNotes] = useState(() => {
-    const saved = localStorage.getItem("notes");
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem("notes");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
   });
+
   const [title, setTitle] = useState("");
-  const [desc, setDesc] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [editingId, setEditingId] = useState(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editDesc, setEditDesc] = useState("");
-  const [editDue, setEditDue] = useState("");
+  const [content, setContent] = useState("");
 
   useEffect(() => {
-    localStorage.setItem("notes", JSON.stringify(notes));
+    try {
+      localStorage.setItem("notes", JSON.stringify(notes));
+    } catch (e) {
+      console.error("Failed to save notes:", e);
+    }
   }, [notes]);
 
   const addNote = () => {
     if (!title.trim()) return;
-    setNotes([
-      { id: Date.now(), title: title.trim(), desc: desc.trim(), due: dueDate },
-      ...notes,
-    ]);
+    const newNote = {
+      id: Date.now(),
+      title: title.trim(),
+      content: content.trim(),
+    };
+    setNotes([newNote, ...notes]);
     setTitle("");
-    setDesc("");
-    setDueDate("");
+    setContent("");
   };
 
-  const deleteNote = (id) => setNotes(notes.filter((n) => n.id !== id));
-
-  const startEdit = (note) => {
-    setEditingId(note.id);
-    setEditTitle(note.title);
-    setEditDesc(note.desc);
-    setEditDue(note.due);
+  const deleteNote = (id) => {
+    setNotes(notes.filter((note) => note.id !== id));
   };
 
-  const saveEdit = (id) => {
-    setNotes(
-      notes.map((n) =>
-        n.id === id
-          ? { ...n, title: editTitle, desc: editDesc, due: editDue }
-          : n
-      )
-    );
-    setEditingId(null);
-  };
-
-  const isOverdue = (due) => {
-    if (!due) return false;
-    return new Date(due) < new Date(new Date().toDateString());
-  };
-
-  const formatDate = (due) => {
-    if (!due) return "";
-    return new Date(due).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      addNote();
+    }
   };
 
   return (
-    <div className="app">
-      <h1>📝 Notes</h1>
+    <div className="page-container">
+      <div className="editor-card">
+        <h1 className="editor-title">Real-Time Notes Editor</h1>
 
-      <div className="form">
-        <input
-          className="input-title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title"
-        />
-        <textarea
-          value={desc}
-          onChange={(e) => setDesc(e.target.value)}
-          placeholder="Description..."
-          rows={3}
-        />
-        <div className="form-row">
-          <label>
-            Due date:
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
-          </label>
-          <button className="btn-add" onClick={addNote}>
+        <div className="form-group">
+          <input
+            type="text"
+            className="input-title"
+            placeholder="Note title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addNote()}
+          />
+
+          <textarea
+            className="input-content"
+            placeholder="Note content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={5}
+          />
+
+          <button type="button" className="btn-add" onClick={addNote}>
             Add Note
           </button>
         </div>
-      </div>
 
-      <div className="notes">
-        {notes.map((note) => (
-          <div
-            key={note.id}
-            className={`note ${isOverdue(note.due) ? "overdue" : ""}`}
-          >
-            {editingId === note.id ? (
-              <div className="edit-form">
-                <input
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  placeholder="Title"
-                  autoFocus
-                />
-                <textarea
-                  value={editDesc}
-                  onChange={(e) => setEditDesc(e.target.value)}
-                  placeholder="Description..."
-                  rows={2}
-                />
-                <div className="form-row">
-                  <label>
-                    Due:
-                    <input
-                      type="date"
-                      value={editDue}
-                      onChange={(e) => setEditDue(e.target.value)}
-                    />
-                  </label>
-                  <div className="edit-actions">
-                    <button onClick={() => saveEdit(note.id)}>Save</button>
-                    <button
-                      className="cancel"
-                      onClick={() => setEditingId(null)}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
+        <div className="notes-list">
+          {notes.map((note) => (
+            <div key={note.id} className="note-item">
+              <div className="note-body">
+                <h3 className="note-title">{note.title}</h3>
+                {note.content && <p className="note-text">{note.content}</p>}
               </div>
-            ) : (
-              <>
-                <div className="note-content">
-                  <h3>{note.title}</h3>
-                  {note.desc && <p>{note.desc}</p>}
-                  {note.due && (
-                    <span className={`due-tag ${isOverdue(note.due) ? "due-overdue" : ""}`}>
-                      📅 {formatDate(note.due)}
-                    </span>
-                  )}
-                </div>
-                <div className="note-actions">
-                  <button onClick={() => startEdit(note)}>Edit</button>
-                  <button
-                    className="delete"
-                    onClick={() => deleteNote(note.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        ))}
-        {notes.length === 0 && (
-          <p className="empty">No notes yet. Add one above!</p>
-        )}
+              <button
+                type="button"
+                className="btn-delete"
+                onClick={() => deleteNote(note.id)}
+                aria-label="Delete note"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
