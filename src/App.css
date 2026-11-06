@@ -124,6 +124,12 @@ body {
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.note-item:hover {
+  transform: translateY(-2px) scale(1.001);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .note-body {
