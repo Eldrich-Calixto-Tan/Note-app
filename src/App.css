@@ -158,11 +158,11 @@ body {
   padding: 0 4px;
   line-height: 1;
   flex-shrink: 0;
-  transition: opacity 0.15s ease, transform 0.1s ease;
+  transition: color 0.15s ease, transform 0.1s ease;
 }
 
 .btn-delete:hover {
-  opacity: 0.6;
+  color: #ef4444;
 }
 
 .btn-delete:active {
